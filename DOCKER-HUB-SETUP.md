@@ -10,7 +10,7 @@
 4. **Visibilité** : Public ou Private (selon votre choix)
 5. **Cliquez "Create"**
 
-L'URL finale sera : `https://hub.docker.com/r/louayh11/student-management`
+L'URL finale sera : `https://hub.docker.com/r/louay11/student-management`
 
 ### **ÉTAPE 2 : Configurer les credentials dans Jenkins**
 
@@ -22,7 +22,7 @@ L'URL finale sera : `https://hub.docker.com/r/louayh11/student-management`
 4. **Configurer :**
    - **Kind** : Username with password
    - **Scope** : Global
-   - **Username** : `louayh11`
+   - **Username** : `louay11`
    - **Password** : `[votre-mot-de-passe-docker-hub]`
    - **ID** : `docker-hub-credentials`
    - **Description** : `Docker Hub Credentials for louayh11`
@@ -94,5 +94,5 @@ Si erreur `denied: requested access to the resource is denied` :
 ### **📊 RÉSULTAT**
 
 Après configuration, vos images seront disponibles sur :
-- `docker pull louayh11/student-management:latest`
-- `docker pull louayh11/student-management:BUILD_NUMBER`
+- `docker pull louay11/student-management:latest`
+- `docker pull louay11/student-management:BUILD_NUMBER`

@@ -89,7 +89,8 @@ pipeline {
                 echo 'Construction de l\'image Docker...'
                 script {
                     // Définir le nom de l'image avec le repository Docker Hub
-                    def dockerRepo = "louayh11/student-management"
+                    // Note: Assurez-vous que le username correspond aux credentials Jenkins
+                    def dockerRepo = "louay11/student-management"  // Corrigé pour correspondre au login
                     def imageTag = "${dockerRepo}:${env.BUILD_NUMBER}"
                     def latestTag = "${dockerRepo}:latest"
                     def localTag = "student-management:latest"
@@ -161,9 +162,9 @@ pipeline {
                 success {
                     echo "🎉 SUCCESS: Images Docker créées et poussées !"
                     echo "📦 Images disponibles:"
-                    echo "   - louayh11/student-management:${env.BUILD_NUMBER}"
-                    echo "   - louayh11/student-management:latest"
-                    echo "🐳 Usage: docker pull louayh11/student-management:latest"
+                    echo "   - louay11/student-management:${env.BUILD_NUMBER}"
+                    echo "   - louay11/student-management:latest"
+                    echo "🐳 Usage: docker pull louay11/student-management:latest"
                 }
                 failure {
                     echo "❌ Stage Docker échoué"
