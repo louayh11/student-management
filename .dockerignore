@@ -1,0 +1,49 @@
+# Exclure les fichiers de build et cache
+target/
+!target/*.jar
+*.jar
+*.war
+*.ear
+
+# Exclure les fichiers IDE
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+.settings/
+.project
+.classpath
+
+# Exclure les fichiers système
+.DS_Store
+Thumbs.db
+
+# Exclure les logs
+logs/
+*.log
+
+# Exclure les fichiers Git
+.git/
+.gitignore
+
+# Exclure les fichiers temporaires
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Exclure la documentation et README
+README.md
+*.md
+docs/
+
+# Exclure les fichiers de test
+src/test/
+
+# Exclure les fichiers Docker
+Dockerfile
+.dockerignore
+
+# Exclure les fichiers Jenkins
+Jenkinsfile

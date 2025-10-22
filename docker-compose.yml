@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # Application Spring Boot
+  student-management:
+    image: student-management:latest
+    container_name: student-management-app
+    ports:
+      - "8089:8089"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_URL=jdbc:mysql://mysql:3306/studentdb?createDatabaseIfNotExist=true
+      - DB_USERNAME=root
+      - DB_PASSWORD=rootpassword
+      - JAVA_OPTS=-Xmx512m -Xms256m
+    depends_on:
+      - mysql
+    networks:
+      - student-network
+    restart: unless-stopped
+
+  # Base de données MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: student-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=studentdb
+      - MYSQL_USER=student
+      - MYSQL_PASSWORD=studentpass
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - student-network
+    restart: unless-stopped
+
+  # Interface d'administration MySQL (optionnel)
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: student-phpmyadmin
+    ports:
+      - "8080:80"
+    environment:
+      - PMA_HOST=mysql
+      - PMA_USER=root
+      - PMA_PASSWORD=rootpassword
+    depends_on:
+      - mysql
+    networks:
+      - student-network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  student-network:
+    driver: bridge

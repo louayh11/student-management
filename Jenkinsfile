@@ -83,6 +83,48 @@ pipeline {
                 archiveArtifacts artifacts: 'target/*.jar', allowEmptyArchive: true
             }
         }
+        
+        stage('Docker Build & Push') {
+            steps {
+                echo 'Construction de l\'image Docker...'
+                script {
+                    // Définir le nom de l'image avec timestamp
+                    def imageTag = "student-management:${env.BUILD_NUMBER}"
+                    def latestTag = "student-management:latest"
+                    
+                    if (isUnix()) {
+                        // Build de l'image Docker
+                        sh "docker build -t ${imageTag} -t ${latestTag} ."
+                        
+                        // Optionnel: Push vers un registry (décommentez si vous avez un registry)
+                        // sh "docker push ${imageTag}"
+                        // sh "docker push ${latestTag}"
+                        
+                        // Afficher les images créées
+                        sh "docker images | grep student-management"
+                        
+                    } else {
+                        // Build de l'image Docker sur Windows
+                        bat "docker build -t ${imageTag} -t ${latestTag} ."
+                        
+                        // Optionnel: Push vers un registry (décommentez si vous avez un registry)
+                        // bat "docker push ${imageTag}"
+                        // bat "docker push ${latestTag}"
+                        
+                        // Afficher les images créées
+                        bat "docker images | findstr student-management"
+                    }
+                }
+            }
+            post {
+                success {
+                    echo "Image Docker créée avec succès: student-management:${env.BUILD_NUMBER}"
+                }
+                failure {
+                    echo "Échec de la création de l'image Docker"
+                }
+            }
+        }
     }
     
     post {
