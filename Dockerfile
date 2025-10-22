@@ -1,5 +1,5 @@
 # Dockerfile multi-stage pour optimiser la taille de l'image
-FROM openjdk:17-jdk-alpine as builder
+FROM eclipse-temurin:17-jdk-alpine as builder
 
 # Créer un répertoire de travail
 WORKDIR /app
@@ -19,7 +19,7 @@ COPY src src
 RUN ./mvnw clean package -DskipTests
 
 # Étape finale - image de production légère
-FROM openjdk:17-jre-alpine
+FROM eclipse-temurin:17-jre-alpine
 
 # Créer un utilisateur non-root pour la sécurité
 RUN addgroup -g 1001 -S appgroup && \

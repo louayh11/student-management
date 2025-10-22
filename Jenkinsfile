@@ -115,13 +115,12 @@ pipeline {
                         }
                     } catch (Exception e) {
                         echo "❌ Erreur Docker: ${e.getMessage()}"
-                        echo "📋 CONFIGURATION REQUISE:"
-                        echo "1. Ajouter l'utilisateur jenkins au groupe docker:"
+                        echo "📋 CAUSES POSSIBLES:"
+                        echo "1. Permissions Docker - Exécuter sur le serveur:"
                         echo "   sudo usermod -aG docker jenkins"
-                        echo "2. Redémarrer le service Jenkins:"
                         echo "   sudo systemctl restart jenkins"
-                        echo "3. Ou redémarrer Docker:"
-                        echo "   sudo systemctl restart docker"
+                        echo "2. Image Docker introuvable - Vérifier le Dockerfile"
+                        echo "3. Problème réseau - Vérifier la connexion Docker Hub"
                         echo "⚠️  Le pipeline continue malgré l'échec Docker"
                         currentBuild.result = 'UNSTABLE'
                     }
