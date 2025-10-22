@@ -64,6 +64,61 @@ pipeline {
             }
         }
         
+        stage('SonarQube Analysis') {
+            steps {
+                echo 'Analyse de qualité de code avec SonarQube...'
+                script {
+                    try {
+                        // Configuration SonarQube avec token
+                        withSonarQubeEnv('SonarQube') {
+                            if (isUnix()) {
+                                sh '''
+                                    mvn sonar:sonar \
+                                        -Dsonar.projectKey=student-management \
+                                        -Dsonar.projectName="Student Management System" \
+                                        -Dsonar.projectVersion=${BUILD_NUMBER} \
+                                        -Dsonar.sources=src/main/java \
+                                        -Dsonar.tests=src/test/java \
+                                        -Dsonar.java.binaries=target/classes \
+                                        -Dsonar.junit.reportPaths=target/surefire-reports
+                                '''
+                            } else {
+                                bat '''
+                                    mvn sonar:sonar ^
+                                        -Dsonar.projectKey=student-management ^
+                                        -Dsonar.projectName="Student Management System" ^
+                                        -Dsonar.projectVersion=%BUILD_NUMBER% ^
+                                        -Dsonar.sources=src/main/java ^
+                                        -Dsonar.tests=src/test/java ^
+                                        -Dsonar.java.binaries=target/classes ^
+                                        -Dsonar.junit.reportPaths=target/surefire-reports
+                                '''
+                            }
+                        }
+                        
+                        // Attendre les résultats de Quality Gate
+                        timeout(time: 5, unit: 'MINUTES') {
+                            def qg = waitForQualityGate()
+                            if (qg.status != 'OK') {
+                                echo "⚠️ Quality Gate failed: ${qg.status}"
+                                currentBuild.result = 'UNSTABLE'
+                            } else {
+                                echo "✅ Quality Gate passed!"
+                            }
+                        }
+                        
+                    } catch (Exception e) {
+                        echo "❌ SonarQube analysis failed: ${e.getMessage()}"
+                        echo "📋 Configuration requise:"
+                        echo "1. Installer SonarQube: docker run -d -p 9000:9000 sonarqube:lts-community"
+                        echo "2. Configurer SonarQube dans Jenkins (Manage Jenkins → Configure System)"
+                        echo "3. Créer un token SonarQube et l'ajouter dans Jenkins credentials"
+                        currentBuild.result = 'UNSTABLE'
+                    }
+                }
+            }
+        }
+        
         stage('Package') {
             steps {
                 echo 'Création du package JAR...'
