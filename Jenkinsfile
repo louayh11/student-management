@@ -43,15 +43,10 @@ pipeline {
             steps {
                 echo 'Exécution des tests...'
                 script {
-                    try {
-                        if (isUnix()) {
-                            sh 'mvn test'
-                        } else {
-                            bat 'mvn test'
-                        }
-                    } catch (Exception e) {
-                        echo "Les tests ont échoué, mais on continue le build : ${e.getMessage()}"
-                        currentBuild.result = 'UNSTABLE'
+                    if (isUnix()) {
+                        sh 'mvn test'
+                    } else {
+                        bat 'mvn test'
                     }
                 }
             }
@@ -60,7 +55,7 @@ pipeline {
                     // Publication des résultats de tests si disponibles
                     script {
                         if (fileExists('target/surefire-reports')) {
-                            junit allowEmptyResults: true, testResultsPattern: 'target/surefire-reports/*.xml'
+                            junit allowEmptyResults: true, testDataPublishers: [], testResults: 'target/surefire-reports/*.xml'
                         } else {
                             echo 'Aucun rapport de test trouvé'
                         }
