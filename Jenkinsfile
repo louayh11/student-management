@@ -1,10 +1,9 @@
 pipeline {
     agent any
     
-    tools {
-        maven 'Maven-3.9.0' // Nom de votre installation Maven dans Jenkins
-        jdk 'JDK-17'        // Nom de votre installation JDK dans Jenkins
-    }
+    // Utilisation des outils par défaut disponibles sur l'agent
+    // Si vous avez configuré des outils spécifiques dans Jenkins, 
+    // remplacez 'any' par le nom exact de vos installations
     
     stages {
         stage('Checkout') {
@@ -17,26 +16,50 @@ pipeline {
         stage('Clean') {
             steps {
                 echo 'Nettoyage du projet...'
-                bat 'mvn clean'
+                script {
+                    if (isUnix()) {
+                        sh 'mvn clean'
+                    } else {
+                        bat 'mvn clean'
+                    }
+                }
             }
         }
         
         stage('Compile') {
             steps {
                 echo 'Compilation du projet...'
-                bat 'mvn compile'
+                script {
+                    if (isUnix()) {
+                        sh 'mvn compile'
+                    } else {
+                        bat 'mvn compile'
+                    }
+                }
             }
         }
         
         stage('Test') {
             steps {
                 echo 'Exécution des tests...'
-                bat 'mvn test'
+                script {
+                    if (isUnix()) {
+                        sh 'mvn test'
+                    } else {
+                        bat 'mvn test'
+                    }
+                }
             }
             post {
                 always {
-                    // Publication des résultats de tests
-                    junit 'target/surefire-reports/*.xml'
+                    // Publication des résultats de tests si disponibles
+                    script {
+                        if (fileExists('target/surefire-reports')) {
+                            junit 'target/surefire-reports/*.xml'
+                        } else {
+                            echo 'Aucun rapport de test trouvé'
+                        }
+                    }
                 }
             }
         }
@@ -44,7 +67,13 @@ pipeline {
         stage('Package') {
             steps {
                 echo 'Création du package JAR...'
-                bat 'mvn package -DskipTests'
+                script {
+                    if (isUnix()) {
+                        sh 'mvn package -DskipTests'
+                    } else {
+                        bat 'mvn package -DskipTests'
+                    }
+                }
             }
         }
         
