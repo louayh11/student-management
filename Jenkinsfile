@@ -111,6 +111,15 @@ pipeline {
                                            passwordVariable: 'DOCKER_PASS')]) {
                                 sh """
                                     echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
+                                    
+                                    # Vérifier si le repository existe, sinon le créer avec un push initial
+                                    if ! docker manifest inspect ${latestTag} > /dev/null 2>&1; then
+                                        echo "🆕 Repository n'existe pas, création automatique..."
+                                        docker push ${imageTag}
+                                        echo "✅ Repository créé avec la première image"
+                                    fi
+                                    
+                                    # Push normal
                                     docker push ${imageTag}
                                     docker push ${latestTag}
                                     docker logout
