@@ -88,30 +88,52 @@ pipeline {
             steps {
                 echo 'Construction de l\'image Docker...'
                 script {
-                    // Définir le nom de l'image avec timestamp
-                    def imageTag = "student-management:${env.BUILD_NUMBER}"
-                    def latestTag = "student-management:latest"
+                    // Définir le nom de l'image avec le repository Docker Hub
+                    def dockerRepo = "louayh11/student-management"
+                    def imageTag = "${dockerRepo}:${env.BUILD_NUMBER}"
+                    def latestTag = "${dockerRepo}:latest"
+                    def localTag = "student-management:latest"
                     
                     try {
                         if (isUnix()) {
                             // Vérifier si Docker est accessible
                             sh "docker --version"
                             
-                            // Build de l'image Docker
-                            sh "docker build -t ${imageTag} -t ${latestTag} ."
+                            // Build de l'image Docker (version locale d'abord)
+                            sh "docker build -t ${localTag} -t ${imageTag} -t ${latestTag} ."
                             
                             // Afficher les images créées
-                            sh "docker images | grep student-management"
+                            sh "docker images | grep -E '(student-management|louayh11)'"
                             
-                            // Optionnel: Push vers un registry (décommentez si configuré)
-                            // sh "docker push ${imageTag}"
-                            // sh "docker push ${latestTag}"
+                            // Push vers Docker Hub avec credentials
+                            withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', 
+                                           usernameVariable: 'DOCKER_USER', 
+                                           passwordVariable: 'DOCKER_PASS')]) {
+                                sh """
+                                    echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
+                                    docker push ${imageTag}
+                                    docker push ${latestTag}
+                                    docker logout
+                                """
+                            }
                             
                         } else {
                             // Build de l'image Docker sur Windows
                             bat "docker --version"
-                            bat "docker build -t ${imageTag} -t ${latestTag} ."
+                            bat "docker build -t ${localTag} -t ${imageTag} -t ${latestTag} ."
                             bat "docker images | findstr student-management"
+                            
+                            // Push vers Docker Hub avec credentials (Windows)
+                            withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', 
+                                           usernameVariable: 'DOCKER_USER', 
+                                           passwordVariable: 'DOCKER_PASS')]) {
+                                bat """
+                                    echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+                                    docker push ${imageTag}
+                                    docker push ${latestTag}
+                                    docker logout
+                                """
+                            }
                         }
                     } catch (Exception e) {
                         echo "❌ Erreur Docker: ${e.getMessage()}"
@@ -128,10 +150,18 @@ pipeline {
             }
             post {
                 success {
-                    echo "✅ Image Docker créée avec succès: student-management:${env.BUILD_NUMBER}"
+                    echo "🎉 SUCCESS: Images Docker créées et poussées !"
+                    echo "📦 Images disponibles:"
+                    echo "   - louayh11/student-management:${env.BUILD_NUMBER}"
+                    echo "   - louayh11/student-management:latest"
+                    echo "🐳 Usage: docker pull louayh11/student-management:latest"
                 }
                 failure {
-                    echo "❌ Stage Docker échoué - Vérifiez la configuration Docker/Jenkins"
+                    echo "❌ Stage Docker échoué"
+                    echo "📋 Vérifiez:"
+                    echo "   1. Repository Docker Hub : louayh11/student-management"
+                    echo "   2. Credentials Jenkins : docker-hub-credentials"
+                    echo "   3. Connexion réseau Docker Hub"
                 }
                 unstable {
                     echo "⚠️  Stage Docker instable - Configuration requise"

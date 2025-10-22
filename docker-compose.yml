@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # Application Spring Boot
   student-management:
-    image: student-management:latest
+    image: louayh11/student-management:latest
     container_name: student-management-app
     ports:
       - "8089:8089"
