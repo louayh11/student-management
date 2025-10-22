@@ -92,36 +92,50 @@ pipeline {
                     def imageTag = "student-management:${env.BUILD_NUMBER}"
                     def latestTag = "student-management:latest"
                     
-                    if (isUnix()) {
-                        // Build de l'image Docker
-                        sh "docker build -t ${imageTag} -t ${latestTag} ."
-                        
-                        // Optionnel: Push vers un registry (décommentez si vous avez un registry)
-                        // sh "docker push ${imageTag}"
-                        // sh "docker push ${latestTag}"
-                        
-                        // Afficher les images créées
-                        sh "docker images | grep student-management"
-                        
-                    } else {
-                        // Build de l'image Docker sur Windows
-                        bat "docker build -t ${imageTag} -t ${latestTag} ."
-                        
-                        // Optionnel: Push vers un registry (décommentez si vous avez un registry)
-                        // bat "docker push ${imageTag}"
-                        // bat "docker push ${latestTag}"
-                        
-                        // Afficher les images créées
-                        bat "docker images | findstr student-management"
+                    try {
+                        if (isUnix()) {
+                            // Vérifier si Docker est accessible
+                            sh "docker --version"
+                            
+                            // Build de l'image Docker
+                            sh "docker build -t ${imageTag} -t ${latestTag} ."
+                            
+                            // Afficher les images créées
+                            sh "docker images | grep student-management"
+                            
+                            // Optionnel: Push vers un registry (décommentez si configuré)
+                            // sh "docker push ${imageTag}"
+                            // sh "docker push ${latestTag}"
+                            
+                        } else {
+                            // Build de l'image Docker sur Windows
+                            bat "docker --version"
+                            bat "docker build -t ${imageTag} -t ${latestTag} ."
+                            bat "docker images | findstr student-management"
+                        }
+                    } catch (Exception e) {
+                        echo "❌ Erreur Docker: ${e.getMessage()}"
+                        echo "📋 CONFIGURATION REQUISE:"
+                        echo "1. Ajouter l'utilisateur jenkins au groupe docker:"
+                        echo "   sudo usermod -aG docker jenkins"
+                        echo "2. Redémarrer le service Jenkins:"
+                        echo "   sudo systemctl restart jenkins"
+                        echo "3. Ou redémarrer Docker:"
+                        echo "   sudo systemctl restart docker"
+                        echo "⚠️  Le pipeline continue malgré l'échec Docker"
+                        currentBuild.result = 'UNSTABLE'
                     }
                 }
             }
             post {
                 success {
-                    echo "Image Docker créée avec succès: student-management:${env.BUILD_NUMBER}"
+                    echo "✅ Image Docker créée avec succès: student-management:${env.BUILD_NUMBER}"
                 }
                 failure {
-                    echo "Échec de la création de l'image Docker"
+                    echo "❌ Stage Docker échoué - Vérifiez la configuration Docker/Jenkins"
+                }
+                unstable {
+                    echo "⚠️  Stage Docker instable - Configuration requise"
                 }
             }
         }
