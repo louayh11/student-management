@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: student-management-ingress
+  namespace: student-management
+  labels:
+    app: student-management
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    # Ajustez selon votre ingress controller
+spec:
+  ingressClassName: nginx # Ajustez selon votre cluster
+  rules:
+  - host: student-management.local # Changez selon votre domaine
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: student-management-service
+            port:
+              number: 80
+  # Décommentez si vous avez un certificat TLS
+  # tls:
+  # - hosts:
+  #   - student-management.local
+  #   secretName: student-management-tls

@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: student-management-app
+  namespace: student-management
+  labels:
+    app: student-management
+    tier: application
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: student-management
+      tier: application
+  template:
+    metadata:
+      labels:
+        app: student-management
+        tier: application
+    spec:
+      containers:
+      - name: student-management
+        image: louay11/student-management:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          valueFrom:
+            configMapKeyRef:
+              name: student-management-config
+              key: SPRING_PROFILES_ACTIVE
+        - name: SPRING_DATASOURCE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: student-management-config
+              key: SPRING_DATASOURCE_URL
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: student-management-config
+              key: SPRING_DATASOURCE_USERNAME
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: student-management-secret
+              key: SPRING_DATASOURCE_PASSWORD
+        - name: SERVER_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: student-management-config
+              key: SERVER_PORT
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 90
+          periodSeconds: 30
+          timeoutSeconds: 10
+        startupProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          failureThreshold: 30
+          periodSeconds: 10
+      initContainers:
+      - name: wait-for-mysql
+        image: busybox:1.35
+        command: ['sh', '-c']
+        args:
+        - |
+          echo "Waiting for MySQL to be ready..."
+          until nc -z mysql-service 3306; do
+            echo "MySQL not ready, waiting..."
+            sleep 5
+          done
+          echo "MySQL is ready!"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: student-management-service
+  namespace: student-management
+  labels:
+    app: student-management
+    tier: application
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: student-management
+    tier: application

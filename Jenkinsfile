@@ -284,6 +284,90 @@ pipeline {
                 }
             }
         }
+        
+        stage('Kubernetes Deploy') {
+            when {
+                // Déployer seulement si configuré
+                expression { return params.DEPLOY_TO_K8S == true || env.DEPLOY_TO_K8S == 'true' }
+            }
+            steps {
+                echo 'Déploiement sur Kubernetes...'
+                script {
+                    try {
+                        // Vérifier kubectl
+                        if (isUnix()) {
+                            sh '''
+                                echo "🔍 Vérification de kubectl..."
+                                if ! command -v kubectl &> /dev/null; then
+                                    echo "❌ kubectl non installé"
+                                    exit 1
+                                fi
+                                
+                                echo "✅ kubectl version:"
+                                kubectl version --client
+                                
+                                echo "🔗 Cluster info:"
+                                kubectl cluster-info
+                            '''
+                            
+                            // Déploiement avec le script
+                            sh """
+                                echo "🚀 Déploiement Kubernetes avec tag ${env.BUILD_NUMBER}..."
+                                chmod +x deploy-k8s.sh
+                                ./deploy-k8s.sh ${env.BUILD_NUMBER}
+                            """
+                            
+                            // Vérification du déploiement
+                            sh '''
+                                echo "📊 Status final du déploiement:"
+                                kubectl get all -n student-management
+                                
+                                echo "🔍 Pods en cours:"
+                                kubectl get pods -n student-management -o wide
+                                
+                                echo "🌐 Services exposés:"
+                                kubectl get services -n student-management
+                            '''
+                            
+                        } else {
+                            echo "⚠️ Déploiement Kubernetes supporté uniquement sur Unix/Linux"
+                            echo "💡 Utilisez le script deploy-k8s.sh manuellement sur votre cluster"
+                        }
+                        
+                        echo '✅ Déploiement Kubernetes terminé!'
+                        
+                    } catch (Exception e) {
+                        echo "❌ Erreur Kubernetes: ${e.getMessage()}"
+                        echo "📋 Vérifiez:"
+                        echo "1. kubectl est installé et configuré"
+                        echo "2. Cluster Kubernetes accessible"
+                        echo "3. Permissions suffisantes"
+                        currentBuild.result = 'UNSTABLE'
+                    }
+                }
+            }
+            post {
+                success {
+                    echo '🎉 SUCCESS: Application déployée sur Kubernetes!'
+                    echo '🌐 Accès à l\'application:'
+                    echo '   URL: http://student-management.local'
+                    echo '   Port-forward: kubectl port-forward service/student-management-service 8080:80 -n student-management'
+                    echo ''
+                    echo '📊 Monitoring:'
+                    echo '   Pods: kubectl get pods -n student-management'
+                    echo '   Logs: kubectl logs -f deployment/student-management-app -n student-management'
+                    echo '   Scale: kubectl scale deployment student-management-app --replicas=5 -n student-management'
+                }
+                unstable {
+                    echo '⚠️  Déploiement Kubernetes instable - vérifiez les logs'
+                    echo '🔍 Debug: kubectl describe pods -n student-management'
+                }
+            }
+        }
+    }
+    
+    parameters {
+        booleanParam(name: 'DEPLOY_TO_K8S', defaultValue: false, description: 'Déployer sur Kubernetes?')
     }
     
     post {

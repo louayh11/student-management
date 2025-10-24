@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: student-management
+  labels:
+    name: student-management
+    app: student-management-system
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: student-management-config
+  namespace: student-management
+data:
+  SPRING_PROFILES_ACTIVE: "k8s"
+  SPRING_DATASOURCE_URL: "jdbc:mysql://mysql-service:3306/student_management"
+  SPRING_DATASOURCE_USERNAME: "student_user"
+  SERVER_PORT: "8080"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: student-management-secret
+  namespace: student-management
+type: Opaque
+data:
+  # Base64 encoded password: echo -n 'student_password' | base64
+  SPRING_DATASOURCE_PASSWORD: c3R1ZGVudF9wYXNzd29yZA==
+  # Base64 encoded MySQL root password: echo -n 'rootpassword' | base64  
+  MYSQL_ROOT_PASSWORD: cm9vdHBhc3N3b3Jk
+  MYSQL_PASSWORD: c3R1ZGVudF9wYXNzd29yZA==
