@@ -65,10 +65,6 @@ pipeline {
         }
         
         stage('SonarQube Analysis') {
-            when {
-                // Exécuter seulement si SonarQube est configuré
-                expression { return env.SONAR_HOST_URL != null || fileExists('sonar-project.properties') }
-            }
             steps {
                 echo 'Analyse de qualité de code avec SonarQube...'
                 script {
