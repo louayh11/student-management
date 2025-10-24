@@ -74,14 +74,16 @@ pipeline {
                             sh 'curl -f http://localhost:9000/api/system/status || echo "SonarQube non accessible"'
                         }
                         
-                        // Configuration SonarQube avec token
-                        withSonarQubeEnv('SonarQube') {
+                        // Configuration SonarQube directe avec token (bypass Jenkins config)
+                        withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
                             if (isUnix()) {
                                 sh '''
                                     mvn clean compile sonar:sonar \
                                         -Dsonar.projectKey=student-management \
                                         -Dsonar.projectName="Student Management System" \
                                         -Dsonar.projectVersion=${BUILD_NUMBER} \
+                                        -Dsonar.host.url=http://localhost:9000 \
+                                        -Dsonar.login=${SONAR_TOKEN} \
                                         -Dsonar.sources=src/main/java \
                                         -Dsonar.tests=src/test/java \
                                         -Dsonar.java.binaries=target/classes \
@@ -94,6 +96,8 @@ pipeline {
                                         -Dsonar.projectKey=student-management ^
                                         -Dsonar.projectName="Student Management System" ^
                                         -Dsonar.projectVersion=%BUILD_NUMBER% ^
+                                        -Dsonar.host.url=http://localhost:9000 ^
+                                        -Dsonar.login=%SONAR_TOKEN% ^
                                         -Dsonar.sources=src/main/java ^
                                         -Dsonar.tests=src/test/java ^
                                         -Dsonar.java.binaries=target/classes ^
