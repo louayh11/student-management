@@ -79,7 +79,7 @@ pipeline {
                             if (isUnix()) {
                                 sh '''
                                     mvn clean compile sonar:sonar \
-                                        -Dsonar.projectKey=student-management-v2 \
+                                        -Dsonar.projectKey=student-management \
                                         -Dsonar.projectName="Student Management System" \
                                         -Dsonar.projectVersion=${BUILD_NUMBER} \
                                         -Dsonar.host.url=http://localhost:9000 \
@@ -93,7 +93,7 @@ pipeline {
                             } else {
                                 bat '''
                                     mvn clean compile sonar:sonar ^
-                                        -Dsonar.projectKey=student-management-v2 ^
+                                        -Dsonar.projectKey=student-management ^
                                         -Dsonar.projectName="Student Management System" ^
                                         -Dsonar.projectVersion=%BUILD_NUMBER% ^
                                         -Dsonar.host.url=http://localhost:9000 ^
