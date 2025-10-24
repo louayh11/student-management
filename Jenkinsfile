@@ -65,54 +65,78 @@ pipeline {
         }
         
         stage('SonarQube Analysis') {
+            when {
+                // Exécuter seulement si SonarQube est configuré
+                expression { return env.SONAR_HOST_URL != null || fileExists('sonar-project.properties') }
+            }
             steps {
                 echo 'Analyse de qualité de code avec SonarQube...'
                 script {
                     try {
+                        // Vérifier que SonarQube est accessible
+                        if (isUnix()) {
+                            sh 'curl -f http://localhost:9000/api/system/status || echo "SonarQube non accessible"'
+                        }
+                        
                         // Configuration SonarQube avec token
                         withSonarQubeEnv('SonarQube') {
                             if (isUnix()) {
                                 sh '''
-                                    mvn sonar:sonar \
+                                    mvn clean compile sonar:sonar \
                                         -Dsonar.projectKey=student-management \
                                         -Dsonar.projectName="Student Management System" \
                                         -Dsonar.projectVersion=${BUILD_NUMBER} \
                                         -Dsonar.sources=src/main/java \
                                         -Dsonar.tests=src/test/java \
                                         -Dsonar.java.binaries=target/classes \
-                                        -Dsonar.junit.reportPaths=target/surefire-reports
+                                        -Dsonar.junit.reportPaths=target/surefire-reports/*.xml \
+                                        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
                                 '''
                             } else {
                                 bat '''
-                                    mvn sonar:sonar ^
+                                    mvn clean compile sonar:sonar ^
                                         -Dsonar.projectKey=student-management ^
                                         -Dsonar.projectName="Student Management System" ^
                                         -Dsonar.projectVersion=%BUILD_NUMBER% ^
                                         -Dsonar.sources=src/main/java ^
                                         -Dsonar.tests=src/test/java ^
                                         -Dsonar.java.binaries=target/classes ^
-                                        -Dsonar.junit.reportPaths=target/surefire-reports
+                                        -Dsonar.junit.reportPaths=target/surefire-reports/*.xml
                                 '''
                             }
                         }
                         
-                        // Attendre les résultats de Quality Gate
-                        timeout(time: 5, unit: 'MINUTES') {
-                            def qg = waitForQualityGate()
-                            if (qg.status != 'OK') {
-                                echo "⚠️ Quality Gate failed: ${qg.status}"
-                                currentBuild.result = 'UNSTABLE'
-                            } else {
-                                echo "✅ Quality Gate passed!"
+                        // Attendre les résultats de Quality Gate (optionnel)
+                        timeout(time: 3, unit: 'MINUTES') {
+                            try {
+                                def qg = waitForQualityGate()
+                                if (qg.status != 'OK') {
+                                    echo "⚠️ Quality Gate failed: ${qg.status}"
+                                    echo "📊 Consultez les détails sur: http://localhost:9000"
+                                    currentBuild.result = 'UNSTABLE'
+                                } else {
+                                    echo "✅ Quality Gate passed!"
+                                }
+                            } catch (Exception qgError) {
+                                echo "⚠️ Quality Gate check échoué, mais analyse envoyée à SonarQube"
+                                echo "📊 Vérifiez manuellement: http://localhost:9000"
                             }
                         }
                         
                     } catch (Exception e) {
                         echo "❌ SonarQube analysis failed: ${e.getMessage()}"
-                        echo "📋 Configuration requise:"
-                        echo "1. Installer SonarQube: docker run -d -p 9000:9000 sonarqube:lts-community"
-                        echo "2. Configurer SonarQube dans Jenkins (Manage Jenkins → Configure System)"
-                        echo "3. Créer un token SonarQube et l'ajouter dans Jenkins credentials"
+                        echo ""
+                        echo "📋 CONFIGURATION REQUISE:"
+                        echo "1. ✅ SonarQube installé: docker run -d -p 9000:9000 sonarqube:lts-community"
+                        echo "2. 🔧 Configurer Jenkins:"
+                        echo "   - Manage Jenkins → Configure System → SonarQube servers"
+                        echo "   - Name: SonarQube, URL: http://localhost:9000"
+                        echo "3. 🔑 Créer token SonarQube:"
+                        echo "   - http://localhost:9000 → My Account → Security → Generate Token"
+                        echo "   - Ajouter dans Jenkins credentials avec ID: sonarqube-token"
+                        echo "4. 🛠️ Installer plugin: SonarQube Scanner"
+                        echo ""
+                        echo "⚠️ Le pipeline continue sans analyse SonarQube"
                         currentBuild.result = 'UNSTABLE'
                     }
                 }

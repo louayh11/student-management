@@ -1,0 +1,12 @@
+[Unit]
+Description=Fix Docker Permissions for Jenkins
+After=docker.service jenkins.service
+Requires=docker.service jenkins.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c 'chmod 666 /var/run/docker.sock && chown root:docker /var/run/docker.sock && usermod -aG docker jenkins'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
